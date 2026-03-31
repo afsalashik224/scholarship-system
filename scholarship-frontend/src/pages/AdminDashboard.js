@@ -28,7 +28,7 @@ const AdminDashboard = () => {
     <div className="page">
       <div className="page-header">
         <h1>Admin Dashboard</h1>
-        <Link className="btn btn-primary" to="/admin/scholarships/new">+ New Scholarship</Link>
+        <Link className="btn btn-primary" to="/admin/scholarships">+ New Scholarship</Link>
       </div>
 
       {/* Stats */}

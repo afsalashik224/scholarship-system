@@ -107,7 +107,7 @@ const AdminApplicationReview = () => {
                 {documents.map(doc => (
                   <tr key={doc._id}>
                     <td>
-                      <a href={`/uploads/${doc.filename}`} target="_blank" rel="noreferrer"
+                      <a href={`http://localhost:5000/uploads/${doc.filename}`} target="_blank" rel="noreferrer"
                         style={{ color: '#1a1a2e', fontWeight: 500 }}>
                         {doc.originalName}
                       </a>

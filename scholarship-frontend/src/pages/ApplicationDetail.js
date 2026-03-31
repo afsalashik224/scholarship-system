@@ -120,8 +120,14 @@ const ApplicationDetail = () => {
                 {documents.map(doc => (
                   <tr key={doc._id}>
                     <td>
-                      <a href={`/uploads/${doc.filename}`} target="_blank" rel="noreferrer"
-                        style={{ color: '#1a1a2e', fontWeight: 500 }}>
+                      <a
+                        href={`http://localhost:5000/uploads/${doc.filename}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => {
+                          console.log("CLICKED FILE LINK");
+                        }}
+                      >
                         {doc.originalName}
                       </a>
                     </td>
