@@ -13,7 +13,9 @@ export const PrivateRoute = ({ children }) => {
 export const RoleRoute = ({ children, role }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="spinner-wrap"><div className="spinner" /></div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+  return null; // 👈 change here
+}
   if (user.role !== role) return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
   return children;
 };
