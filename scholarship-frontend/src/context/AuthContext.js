@@ -8,18 +8,36 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true); // true while verifying stored token
 
   // On app load — if a token exists in localStorage, fetch the user
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) { setLoading(false); return; }
+ useEffect(() => {
+  const token = localStorage.getItem('token');
+  const storedUser = localStorage.getItem('user'); // 👈 YOU MISSED THIS
 
-    getMe()
-      .then(res => setUser(res.data.user))
-      .catch(() => localStorage.removeItem('token'))
-      .finally(() => setLoading(false));
-  }, []);
+  if (!token) {
+    setLoading(false);
+    return;
+  }
+
+  // 👇 Set user immediately (prevents redirect issue)
+  if (storedUser) {
+    setUser(JSON.parse(storedUser));
+  }
+
+  getMe()
+    .then(res => {
+      setUser(res.data.user);
+      localStorage.setItem('user', JSON.stringify(res.data.user)); // 👈 keep updated
+    })
+    .catch(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user'); // 👈 remove both
+      setUser(null);
+    })
+    .finally(() => setLoading(false));
+}, []);
 
   const login = (userData, token) => {
     localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
   };
 
