@@ -2,7 +2,7 @@
 
 A full-stack web application that streamlines the end-to-end scholarship lifecycle — from student discovery and application to admin review and decision-making.
 
-Built with the **MERN stack** (MongoDB, Express, React, Node.js) with JWT-based authentication and role-based access control.
+Built using the **MERN stack** (MongoDB, Express, React, Node.js) with JWT-based authentication and role-based access control.
 
 ---
 
@@ -12,11 +12,11 @@ Built with the **MERN stack** (MongoDB, Express, React, Node.js) with JWT-based 
 
 | Student Dashboard | Scholarship Listing | Application Review |
 |:-----------------:|:-------------------:|:-----------------:|
-| `[dashboard.png]` | `[scholarships.png]` | `[review.png]` |
+| `screenshots\dashboard.png` | `screenshots\scholarships.png` | `screenshots\review.png` |
 
 | Login Page | Document Upload | Admin Panel |
 |:----------:|:---------------:|:-----------:|
-| `[login.png]` | `[upload.png]` | `[admin.png]` |
+| `screenshots\login.png` | `screenshots\upload.png` | `screenshots\admin.png` |
 
 ---
 
@@ -218,11 +218,10 @@ Accepted file types: PDF, JPG, PNG · Max size: 5 MB
 
 ## 👤 Author
 
-**[Your Name]**
+**[Afsal Ali]**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [linkedin.com/in/yourprofile](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
+- GitHub: [@afsalashik224](https://github.com/afsalashik224)
+- Email: afsalashik224@gmail.com
 
 ---
 
