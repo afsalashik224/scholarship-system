@@ -12,11 +12,11 @@ Built using the **MERN stack** (MongoDB, Express, React, Node.js) with JWT-based
 
 | Student Dashboard | Scholarship Listing | Application Review |
 |:-----------------:|:-------------------:|:-----------------:|
-| `screenshots\dashboard.png` | `screenshots\scholarships.png` | `screenshots\review.png` |
+| `./screenshots/dashboard.png` | `./screenshots/scholarships.png` | `./screenshots/review.png` |
 
 | Login Page | Document Upload | Admin Panel |
 |:----------:|:---------------:|:-----------:|
-| `screenshots\login.png` | `screenshots\upload.png` | `screenshots\admin.png` |
+| `./screenshots/login.png` | `./screenshots/upload.png` | `./screenshots/admin.png` |
 
 ---
 
