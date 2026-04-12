@@ -1,154 +1,272 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  getApplicationById, updateApplicationStatus,
+  getApplicationById,
+  updateApplicationStatus,
   getDocumentsByApplication,
 } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 
+/* ── Info row helper ───────────────────────────────── */
+const InfoRow = ({ label, value }) => (
+  <div style={{ marginBottom: 'var(--space-4)' }}>
+    <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 'var(--space-1)' }}>
+      {label}
+    </div>
+    <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+      {value || '—'}
+    </div>
+  </div>
+);
+
+/* ── Decision button helper ────────────────────────── */
+const DecisionBtn = ({ onClick, disabled, className, children }) => (
+  <button className={`btn ${className}`} onClick={onClick} disabled={disabled}>
+    {children}
+  </button>
+);
+
+/* ── Main component ────────────────────────────────── */
 const AdminApplicationReview = () => {
   const { id }   = useParams();
   const navigate = useNavigate();
 
-  const [application, setApplication] = useState(null);
-  const [documents,   setDocuments]   = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [remarks,     setRemarks]     = useState('');
-  const [saving,      setSaving]      = useState(false);
-  const [error,       setError]       = useState('');
-  const [success,     setSuccess]     = useState('');
+  const [app,      setApp]      = useState(null);
+  const [docs,     setDocs]     = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [remarks,  setRemarks]  = useState('');
+  const [saving,   setSaving]   = useState(null);  // 'approved' | 'rejected' | 'under_review' | null
+  const [alert,    setAlert]    = useState(null);  // { type, message }
 
   useEffect(() => {
     Promise.all([getApplicationById(id), getDocumentsByApplication(id)])
       .then(([aRes, dRes]) => {
-        setApplication(aRes.data.application);
-        setRemarks(aRes.data.application.adminRemarks || '');
-        setDocuments(dRes.data.documents);
+        setApp(aRes.data.application);
+        setRemarks(aRes.data.application.adminRemarks ?? '');
+        setDocs(dRes.data.documents);
       })
       .finally(() => setLoading(false));
   }, [id]);
 
   const handleDecision = async (status) => {
-    setError(''); setSuccess(''); setSaving(true);
+    setAlert(null);
+    setSaving(status);
     try {
       const res = await updateApplicationStatus(id, { status, adminRemarks: remarks });
-      setApplication(res.data.application);
-      setSuccess(`Application marked as ${status}.`);
+      setApp(res.data.application);
+      setAlert({ type: 'success', message: `Application marked as ${status.replace('_', ' ')}.` });
     } catch (err) {
-      setError(err.response?.data?.message || 'Update failed');
+      setAlert({ type: 'error', message: err.response?.data?.message ?? 'Update failed.' });
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
-  if (loading) return <div className="spinner-wrap"><div className="spinner" /></div>;
-  if (!application) return <div className="page"><div className="alert alert-error">Application not found.</div></div>;
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="spinner-wrap"><div className="spinner" /><span>Loading application…</span></div>
+      </div>
+    );
+  }
 
-  const { student, scholarship, status, statement, createdAt, reviewedBy, reviewedAt } = application;
+  if (!app) {
+    return (
+      <div className="page">
+        <div className="alert alert-error">Application not found.</div>
+      </div>
+    );
+  }
+
+  const { student, scholarship, status, statement, createdAt, reviewedBy, reviewedAt } = app;
 
   return (
     <div className="page">
-      <button className="btn btn-outline btn-sm" style={{ marginBottom: 20 }}
-        onClick={() => navigate('/admin/applications')}>← Back to applications</button>
 
-      {/* Student + scholarship info */}
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
-          <div>
-            <h1 style={{ fontSize: '1.3rem', color: '#1a1a2e', marginBottom: 4 }}>
-              {scholarship?.title}
-            </h1>
-            <div className="card-meta">
-              Applied {new Date(createdAt).toLocaleDateString()} &nbsp;·&nbsp;
-              Category: {scholarship?.category}
-            </div>
-          </div>
+      {/* ── Breadcrumb ── */}
+      <div className="breadcrumb">
+        <a href="/admin">Dashboard</a>
+        <span className="breadcrumb-sep">/</span>
+        <a href="/admin/applications">Applications</a>
+        <span className="breadcrumb-sep">/</span>
+        <span className="breadcrumb-current">Review</span>
+      </div>
+
+      {/* ── Page header ── */}
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1>{scholarship?.title}</h1>
+          <p>Submitted {new Date(createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        </div>
+        <div className="page-header-actions">
           <StatusBadge status={status} />
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>
+            ← Back
+          </button>
         </div>
+      </div>
 
-        <hr style={{ margin: '16px 0', borderColor: '#eee' }} />
+      {/* ── Two-column layout ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 'var(--space-5)', alignItems: 'start' }}>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div>
-            <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: 4 }}>STUDENT</p>
-            <p style={{ fontWeight: 600 }}>{student?.name}</p>
-            <p style={{ fontSize: '0.85rem', color: '#555' }}>{student?.email}</p>
-            {student?.studentId && <p style={{ fontSize: '0.85rem', color: '#555' }}>ID: {student.studentId}</p>}
-            {student?.course    && <p style={{ fontSize: '0.85rem', color: '#555' }}>{student.course} · Year {student.year}</p>}
-          </div>
-          {reviewedBy && (
-            <div>
-              <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: 4 }}>REVIEWED BY</p>
-              <p style={{ fontWeight: 600 }}>{reviewedBy?.name}</p>
-              <p style={{ fontSize: '0.85rem', color: '#555' }}>{new Date(reviewedAt).toLocaleDateString()}</p>
+        {/* ── Left column ── */}
+        <div>
+
+          {/* Student profile */}
+          <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+            <div className="card-header">
+              <div>
+                <div className="card-title">Student profile</div>
+                <div className="card-description">Applicant details</div>
+              </div>
+              {reviewedBy && (
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Reviewed by</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)' }}>{reviewedBy.name}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{new Date(reviewedAt).toLocaleDateString()}</div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <hr style={{ margin: '16px 0', borderColor: '#eee' }} />
-        <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 6 }}>Personal statement</h3>
-        <p style={{ color: '#555', lineHeight: 1.75 }}>{statement}</p>
-      </div>
-
-      {/* Documents */}
-      <div className="card">
-        <h2 style={{ fontSize: '1.05rem', marginBottom: 14 }}>
-          Supporting documents ({documents.length})
-        </h2>
-        {documents.length === 0 ? (
-          <div className="empty" style={{ padding: '16px 0' }}>No documents uploaded.</div>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>File</th><th>Label</th><th>Size</th><th>Uploaded</th></tr>
-              </thead>
-              <tbody>
-                {documents.map(doc => (
-                  <tr key={doc._id}>
-                    <td>
-                      <a href={`http://localhost:5000/uploads/${doc.filename}`} target="_blank" rel="noreferrer"
-                        style={{ color: '#1a1a2e', fontWeight: 500 }}>
-                        {doc.originalName}
-                      </a>
-                    </td>
-                    <td>{doc.label?.replace('_', ' ')}</td>
-                    <td>{(doc.size / 1024).toFixed(1)} KB</td>
-                    <td>{new Date(doc.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 var(--space-8)' }}>
+              <InfoRow label="Full name"   value={student?.name} />
+              <InfoRow label="Email"       value={student?.email} />
+              <InfoRow label="Student ID"  value={student?.studentId} />
+              <InfoRow label="Course"      value={student?.course} />
+              <InfoRow label="Year"        value={student?.year ? `Year ${student.year}` : null} />
+              <InfoRow label="Scholarship" value={`${scholarship?.category} · ${scholarship?.title}`} />
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Decision panel */}
-      <div className="card">
-        <h2 style={{ fontSize: '1.05rem', marginBottom: 16 }}>Decision</h2>
+          {/* Personal statement */}
+          <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+            <div className="card-header">
+              <div className="card-title">Personal statement</div>
+            </div>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+              {statement}
+            </p>
+          </div>
 
-        {error   && <div className="alert alert-error">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
+          {/* Documents */}
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">Supporting documents</div>
+                <div className="card-description">{docs.length} file{docs.length !== 1 ? 's' : ''} uploaded</div>
+              </div>
+            </div>
 
-        <div className="form-group">
-          <label>Admin remarks (optional)</label>
-          <textarea value={remarks} onChange={e => setRemarks(e.target.value)}
-            placeholder="Add feedback or reason for your decision…" rows={3} />
+            {docs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-8) 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                No documents uploaded for this application.
+              </div>
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>File</th>
+                      <th>Label</th>
+                      <th>Size</th>
+                      <th>Uploaded</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {docs.map(doc => (
+                      <tr key={doc._id}>
+                        <td>
+                          <a
+                            href={`/uploads/${doc.filename}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: 'var(--brand-600)', fontWeight: 500 }}
+                          >
+                            {doc.originalName}
+                          </a>
+                        </td>
+                        <td>
+                          <span className="badge badge-category">
+                            {doc.label?.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td style={{ color: 'var(--text-muted)' }}>
+                          {(doc.size / 1024).toFixed(1)} KB
+                        </td>
+                        <td>{new Date(doc.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="btn btn-outline btn-sm" disabled={saving || status === 'under_review'}
-            onClick={() => handleDecision('under_review')}>
-            Mark as Under Review
-          </button>
-          <button className="btn btn-success" disabled={saving || status === 'approved'}
-            onClick={() => handleDecision('approved')}>
-            {saving ? 'Saving…' : 'Approve'}
-          </button>
-          <button className="btn btn-danger" disabled={saving || status === 'rejected'}
-            onClick={() => handleDecision('rejected')}>
-            {saving ? 'Saving…' : 'Reject'}
-          </button>
+        {/* ── Right column: Decision panel ── */}
+        <div>
+          <div className="card" style={{ position: 'sticky', top: 'calc(var(--navbar-height) + var(--space-6))' }}>
+            <div className="card-header" style={{ marginBottom: 'var(--space-4)' }}>
+              <div>
+                <div className="card-title">Decision</div>
+                <div className="card-description">Current status: <StatusBadge status={status} /></div>
+              </div>
+            </div>
+
+            {alert && (
+              <div className={`alert alert-${alert.type}`} style={{ marginBottom: 'var(--space-4)' }}>
+                {alert.message}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="remarks">
+                Remarks to student
+                <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> (optional)</span>
+              </label>
+              <textarea
+                id="remarks"
+                className="form-textarea"
+                value={remarks}
+                onChange={e => setRemarks(e.target.value)}
+                placeholder="Explain your decision or provide feedback…"
+                rows={4}
+              />
+              <div className="form-hint">Visible to the student after a decision is made.</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <DecisionBtn
+                className="btn-success"
+                disabled={!!saving || status === 'approved'}
+                onClick={() => handleDecision('approved')}
+              >
+                {saving === 'approved'
+                  ? <><span className="btn-spinner" /> Approving…</>
+                  : '✓ Approve application'}
+              </DecisionBtn>
+
+              <DecisionBtn
+                className="btn-secondary"
+                disabled={!!saving || status === 'under_review'}
+                onClick={() => handleDecision('under_review')}
+              >
+                {saving === 'under_review'
+                  ? <><span className="btn-spinner" /> Updating…</>
+                  : '🔍 Mark as under review'}
+              </DecisionBtn>
+
+              <DecisionBtn
+                className="btn-danger"
+                disabled={!!saving || status === 'rejected'}
+                onClick={() => handleDecision('rejected')}
+              >
+                {saving === 'rejected'
+                  ? <><span className="btn-spinner" /> Rejecting…</>
+                  : '✕ Reject application'}
+              </DecisionBtn>
+            </div>
+          </div>
         </div>
       </div>
     </div>

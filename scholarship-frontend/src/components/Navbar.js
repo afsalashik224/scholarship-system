@@ -1,47 +1,59 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
     <nav className="navbar">
-      <Link className="navbar-brand" to={user?.role === 'admin' ? '/admin' : '/dashboard'}>
+      <Link to={user?.role === 'admin' ? '/admin' : '/dashboard'} className="navbar-brand">
+        <span className="navbar-brand-dot" />
         ScholarshipMS
       </Link>
 
       {user && (
-        <ul className="navbar-links">
+        <ul className="navbar-nav">
           {user.role === 'student' ? (
             <>
-              <li><Link to="/dashboard">Dashboard</Link></li>
-              <li><Link to="/scholarships">Scholarships</Link></li>
-              <li><Link to="/my-applications">My Applications</Link></li>
+              <li><NavLink to="/dashboard">Dashboard</NavLink></li>
+              <li><NavLink to="/scholarships">Scholarships</NavLink></li>
+              <li><NavLink to="/my-applications">My Applications</NavLink></li>
             </>
           ) : (
             <>
-              <li><Link to="/admin">Dashboard</Link></li>
-              <li><Link to="/admin/scholarships">Scholarships</Link></li>
-              <li><Link to="/admin/applications">Applications</Link></li>
+              <li><NavLink to="/admin">Dashboard</NavLink></li>
+              <li><NavLink to="/admin/scholarships">Scholarships</NavLink></li>
+              <li><NavLink to="/admin/applications">Applications</NavLink></li>
             </>
           )}
-          <li><span className="navbar-role">{user.role}</span></li>
-          <li><span style={{ color: '#aaa', fontSize: '0.85rem' }}>{user.name}</span></li>
-          <li>
-            <button className="btn btn-outline btn-sm" onClick={handleLogout}
-              style={{ color: '#fff', borderColor: '#555' }}>
-              Logout
-            </button>
-          </li>
         </ul>
       )}
+
+      <div className="navbar-end">
+        <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+          {theme === 'dark' ? '☀' : '☾'}
+        </button>
+
+        {user && (
+          <>
+            <span className={`navbar-role-badge ${user.role}`}>{user.role}</span>
+            <div className="navbar-avatar" title={user.name}>{initials}</div>
+            <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
+              Sign out
+            </button>
+          </>
+        )}
+      </div>
     </nav>
   );
 };
